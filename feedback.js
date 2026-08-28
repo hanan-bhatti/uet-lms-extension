@@ -9,13 +9,24 @@ let selectedStar = 4;
 
 document.addEventListener("DOMContentLoaded", () => {
   const starBtns = document.querySelectorAll(".star-btn");
+
+  function updateStarHighlights(rating) {
+    starBtns.forEach((btn, idx) => {
+      if (idx < rating) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+  }
+
+  // Initialize 4-star default highlight
+  updateStarHighlights(selectedStar);
+
   starBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       selectedStar = parseInt(btn.dataset.star, 10);
-      starBtns.forEach((b, idx) => {
-        if (idx < selectedStar) b.classList.add("active");
-        else b.classList.remove("active");
-      });
+      updateStarHighlights(selectedStar);
     });
   });
 
