@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UET LMS Companion — Settings & Preferences</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    html, body {
+      width: 100%;
+      max-width: 620px;
+      height: auto;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 32px 16px;
+      overflow-y: auto;
+    }
+    .options-container {
+      max-width: 580px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .options-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .setting-info h4 {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .setting-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    select.editorial-select {
+      background: var(--bg-input);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="options-container">
+    <header class="editorial-card" style="display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="editorial-monogram">UET</div>
+        <div>
+          <h2 style="font-family:var(--font-serif); font-size:20px; font-weight:900; font-style:italic;">LMS Companion Settings</h2>
+          <p style="font-size:12px; color:var(--text-muted);">Extension Preferences & Background Sync (v0.1.0 Beta)</p>
+        </div>
+      </div>
+      <span class="badge-beta">AGPL-3.0</span>
+    </header>
+
+    <main class="options-section">
+      <h3 class="editorial-title">BACKGROUND SYNC & NOTIFICATIONS</h3>
+      
+      <div class="setting-row">
+        <div class="setting-info">
+          <h4>Show Extension Badge Counter</h4>
+          <p>Display the number of remaining classes today on the Chrome extension icon badge.</p>
+        </div>
+        <input type="checkbox" id="chk-enable-badge" checked style="width:20px; height:20px; accent-color:var(--punch-red);">
+      </div>
+
+      <hr class="editorial-rule">
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <h4>Background Sync Frequency</h4>
+          <p>How often the extension checks for schedule updates in the background.</p>
+        </div>
+        <select id="sel-sync-interval" class="editorial-select">
+          <option value="15">Every 15 Minutes</option>
+          <option value="30" selected>Every 30 Minutes</option>
+          <option value="60">Every 1 Hour</option>
+        </select>
+      </div>
+
+      <hr class="editorial-rule">
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <h4>Default Opening View</h4>
+          <p>Choose which tab opens when you click the extension popup icon.</p>
+        </div>
+        <select id="sel-default-tab" class="editorial-select">
+          <option value="tab-schedule" selected>Class Schedule</option>
+          <option value="tab-courses">Course Catalog</option>
+          <option value="tab-notices">Department Notices</option>
+        </select>
+      </div>
+    </main>
+
+    <div class="options-section">
+      <h3 class="editorial-title">OPEN SOURCE LICENSE</h3>
+      <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
+        This extension is free open-source software licensed under the <strong>GNU Affero General Public License v3.0 (AGPL-3.0)</strong>.
+      </p>
+      <div style="display:flex; gap:12px; margin-top:4px;">
+        <a href="https://github.com/hanan-bhatti/uet-lms-extension/blob/main/LICENSE" target="_blank" class="editorial-btn-secondary" style="text-decoration:none;">View Full AGPL-3.0 License</a>
+        <a href="https://github.com/hanan-bhatti/uet-lms-extension" target="_blank" class="editorial-btn-primary" style="text-decoration:none;">GitHub Repository</a>
+      </div>
+    </div>
+
+    <footer class="editorial-footer" style="border-radius:var(--radius-md);">
+      <span>UET Computer Science Companion • Built by <a href="https://github.com/hanan-bhatti" target="_blank" class="footer-link">Abdul Hannan Bhatti</a></span>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

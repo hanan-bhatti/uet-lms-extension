@@ -4,11 +4,15 @@
   "version": "0.1.0",
   "description": "An Anti-Slop Editorial Chrome Extension for UET Computer Science LMS. Access class timetables, course catalog, notices, and profile stats.",
   "permissions": [
-    "storage"
+    "storage",
+    "alarms"
   ],
   "host_permissions": [
     "https://api-lms.iotpro.uk/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -16,6 +20,10 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
   },
   "icons": {
     "16": "icons/icon16.png",

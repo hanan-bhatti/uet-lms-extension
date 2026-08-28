@@ -1,11 +1,11 @@
-# 🎓 UET LMS Companion — Editorial Chrome Extension
+# 🎓 UET LMS Companion — Anti-Slop Editorial Chrome Extension (Beta v0.1.0)
 
 ![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-1d3557?style=for-the-badge&logo=googlechrome&logoColor=white)
 ![Design System](https://img.shields.io/badge/Design_System-Editorial_Serif-e63946?style=for-the-badge)
+![License](https://img.shields.io/badge/License-AGPL--3.0-059669?style=for-the-badge)
 ![API Backend](https://img.shields.io/badge/API-NestJS_JWT-457b9d?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-a8dadc?style=for-the-badge)
 
-A high-craft **Editorial Design Chrome Extension** for students at the **University of Engineering & Technology (UET) Department of Computer Science**. Built directly on top of the reverse-engineered **NestJS REST API** (`https://api-lms.iotpro.uk/`), delivering real-time class timetables, interactive course search, live bulletin notice boards, and student analytics.
+A high-craft **Editorial Design Manifest V3 Chrome Extension** for students at the **University of Engineering & Technology (UET) Department of Computer Science**. Built directly on top of the reverse-engineered **NestJS REST API** (`https://api-lms.iotpro.uk/`), delivering real-time class timetables, interactive course search, live bulletin notice boards, and student analytics.
 
 > **Developer & Author**: [Abdul Hannan Bhatti](https://github.com/hanan-bhatti) • [Portfolio Website](https://hanan-bhatti.site/)
 
@@ -13,10 +13,10 @@ A high-craft **Editorial Design Chrome Extension** for students at the **Univers
 
 ## 🎨 Color Palette & Design Tokens
 
-Crafted using a high-contrast editorial color system:
+Designed using a high-contrast editorial color system:
 
 ```css
---punch-red:    #e63946; /* Vivid Crimson Punch - Primary Buttons & Active Pills */
+--punch-red:    #e63946; /* Vivid Crimson Punch - Primary Buttons & Active Badges */
 --honeydew:     #f1faee; /* Soft Pale Mint - Light Mode Canvas & Text Contrast */
 --frosted-blue: #a8dadc; /* Frosted Blue - Soft Highlights & Time Badges */
 --cerulean:     #457b9d; /* Deep Cerulean - Secondary Text, Borders & Subtitles */
@@ -25,14 +25,16 @@ Crafted using a high-contrast editorial color system:
 
 ---
 
-## 🚀 Features
+## 🚀 Features & Extension Architecture
 
+- ⚡ **Manifest V3 Background Service Worker (`background.js`)**: Runs periodic alarms (`chrome.alarms`) in the background to sync class timetables and display dynamic class counters on the extension badge icon (`chrome.action.setBadgeText`).
 - 🔑 **Secure Authentication**: Connects securely to `POST /auth/login` and stores JWT session tokens in encrypted Chrome local storage.
 - 📅 **Full 7-Day Timetable**: View today's schedule or inspect the entire week (`Mon`–`Sun`) with daily section dividers and instructor info.
 - 📚 **Course Catalog & Live Search**: Instant debounced search across **51+ course offerings** with credit hour badges and lab tags.
 - 📢 **Gazette & Bulletin Board**: Real-time access to department notices and academic announcements.
+- ⚙️ **Custom Preferences (`options.html`)**: Configurable background sync frequency, badge counters, and default tab startup view.
 - 👤 **Student Directory & Profile**: Displays student registration number, academic role, and current semester details.
-- ⚡ **0ms SWR Caching**: Instant rendering from local storage cache with automated background revalidation & offline recovery.
+- 🐛 **Built-in Issue Tracker Integration**: Direct one-click trigger to submit GitHub issue reports.
 
 ---
 
@@ -68,10 +70,14 @@ Crafted using a high-contrast editorial color system:
 ```
 uet-lms-extension/
 ├── manifest.json       # Chrome Manifest V3 configuration & permissions
-├── popup.html          # HTML5 Editorial Journal Layout (Playfair Display & Outfit fonts)
+├── background.js       # Background Service Worker, Alarms & Badge Sync
+├── popup.html          # HTML5 Editorial Journal Layout (Playfair Display & Outfit)
 ├── popup.css           # Editorial Design System tokens (Oxford Navy & Punch Red)
 ├── popup.js            # Async REST API Client, SWR Caching, & Search Filter
+├── options.html        # Extension Options & Preferences UI
+├── options.js          # Options Controller (Background alarms & storage sync)
 ├── icons/              # Extension icons (16px, 48px, 128px)
+├── LICENSE             # GNU Affero General Public License v3.0 (AGPL-3.0)
 └── README.md           # Documentation annotated with author profile
 ```
 
@@ -90,4 +96,4 @@ Designed and developed by **Abdul Hannan Bhatti**.
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for details.
+Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See `LICENSE` for details.
