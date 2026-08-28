@@ -2,6 +2,7 @@
  * UET CS LMS Companion — Anti-Slop Editorial Edition (Beta v0.1.0) Controller
  * Optimizations: SWR Caching, Debounced Filtering, Offline Fallback, Onboarding Flow
  * Author: Abdul Hannan Bhatti (https://github.com/hanan-bhatti)
+ * License: AGPL-3.0
  */
 
 const BASE_URL = "https://api-lms.iotpro.uk";
@@ -227,6 +228,18 @@ function initListeners() {
     refreshBtn.addEventListener("click", async () => {
       showToast("Refreshing journal data...");
       await loadDashboardData(true);
+    });
+  }
+
+  // Feedback Trigger
+  const feedbackBtn = document.getElementById("btn-open-feedback");
+  if (feedbackBtn) {
+    feedbackBtn.addEventListener("click", () => {
+      if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+        chrome.tabs.create({ url: "feedback.html" });
+      } else {
+        window.open("feedback.html", "_blank");
+      }
     });
   }
 
