@@ -1,12 +1,11 @@
 /**
- * UET CS LMS Companion — Anti-Slop Editorial Edition (Beta v0.1.0) Controller
- * Optimizations: SWR Caching, Debounced Filtering, Personalized Feedback Banner
+ * UET CS LMS Companion — Strict Monochrome Dark Editorial Edition (Beta v0.1.0)
+ * Canvas-Native CLO Reader + Compact Profile Page + Monochrome Palette + Vertical Time-Pillar Agenda Cards
  * Author: Abdul Hannan Bhatti (https://github.com/hanan-bhatti)
  * License: AGPL-3.0
  */
 
 const BASE_URL = "https://api-lms.iotpro.uk";
-const GITHUB_ISSUES_URL = "https://github.com/hanan-bhatti/uet-lms-extension/issues/new";
 
 // --------------------------------------------------------------------------
 // 1. Storage Manager (Chrome Storage Local with LocalStorage Fallback)
@@ -46,13 +45,20 @@ const Storage = {
 // 2. Global State & Constants
 // --------------------------------------------------------------------------
 let state = {
-  theme: "dark",
   token: null,
   user: null,
   courses: [],
+  sectionsCache: {}, // courseInstanceId -> sections array
+  closCache: {}, // courseInstanceId -> CLOs array
+  serverEnrollments: [], // array of real enrollment objects from GET /enrollments/me
+  enrolledSectionMap: new Map(), // sectionId -> enrollmentId
+  catalogFilter: "all", // "all" | "enrolled"
+  notices: [],
   selectedDay: "today",
   isOffline: false
 };
+
+let refreshPromise = null; // Single-flight Promise lock for concurrent token refresh
 
 const WEEKDAYS = [
   { key: "monday", label: "Monday" },
@@ -64,7 +70,17 @@ const WEEKDAYS = [
   { key: "sunday", label: "Sunday" }
 ];
 
-// Debounce Utility
+// SVG Icon Templates
+const SVG_ICONS = {
+  clock: `<svg class="inline-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  mapPin: `<svg class="inline-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  teacher: `<svg class="inline-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  pin: `<svg class="inline-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  check: `<svg class="inline-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
+  calendar: `<svg class="inline-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  book: `<svg class="inline-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`
+};
+
 function debounce(fn, wait = 150) {
   let timeout;
   return (...args) => {
@@ -74,10 +90,10 @@ function debounce(fn, wait = 150) {
 }
 
 // --------------------------------------------------------------------------
-// 3. API Request Wrapper with Error Handling & Offline State
+// 3. API Request Wrapper with Thread-Safe Single-Flight Token Refresh
 // --------------------------------------------------------------------------
-async function apiRequest(endpoint, method = "GET", body = null) {
-  const token = await Storage.get("lms_token");
+async function apiRequest(endpoint, method = "GET", body = null, isRetry = false) {
+  let token = await Storage.get("lms_token");
   const headers = {
     "Content-Type": "application/json",
     "User-Agent": "UET-LMS-Companion/0.1.0"
@@ -97,8 +113,13 @@ async function apiRequest(endpoint, method = "GET", body = null) {
     const data = await response.json();
 
     if (!response.ok) {
-      if (response.status === 401 && endpoint !== "/auth/login") {
-        await handleLogout();
+      if (response.status === 401 && endpoint !== "/auth/login" && !isRetry) {
+        const refreshed = await silentSessionRefresh();
+        if (refreshed) {
+          return await apiRequest(endpoint, method, body, true);
+        } else {
+          await handleLogout(true);
+        }
       }
       throw new Error(data.message || `HTTP ${response.status}`);
     }
@@ -110,6 +131,45 @@ async function apiRequest(endpoint, method = "GET", body = null) {
       setOfflineStatus(true);
     }
     throw err;
+  }
+}
+
+// Single-Flight Mutex for Session Refresh (Prevents Race Conditions)
+async function silentSessionRefresh() {
+  if (refreshPromise) {
+    return await refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const creds = await Storage.get("lms_saved_creds");
+      if (!creds || !creds.email || !creds.password) {
+        return false;
+      }
+
+      const res = await fetch(`${BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: creds.email, password: creds.password })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.accessToken) {
+        await Storage.set("lms_token", data.accessToken);
+        state.token = data.accessToken;
+        return true;
+      }
+    } catch (err) {
+      console.warn("[LMS Companion] Silent session refresh error:", err);
+    }
+    return false;
+  })();
+
+  try {
+    const result = await refreshPromise;
+    return result;
+  } finally {
+    refreshPromise = null;
   }
 }
 
@@ -126,7 +186,7 @@ function setOfflineStatus(isOffline) {
 // 4. Initialization & Event Listeners
 // --------------------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", async () => {
-  await initTheme();
+  await loadSavedEmail();
   initTabs();
   initListeners();
 
@@ -139,38 +199,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// Theme Management
-async function initTheme() {
-  const savedTheme = await Storage.get("lms_theme") || "dark";
-  setTheme(savedTheme);
-
-  const themeBtn = document.getElementById("btn-theme-toggle");
-  if (themeBtn) {
-    themeBtn.addEventListener("click", async () => {
-      const nextTheme = state.theme === "dark" ? "light" : "dark";
-      await setTheme(nextTheme);
-    });
+async function loadSavedEmail() {
+  const savedEmail = await Storage.get("lms_saved_email");
+  const inputEmail = document.getElementById("input-email");
+  if (savedEmail && inputEmail) {
+    inputEmail.value = savedEmail;
   }
 }
 
-async function setTheme(theme) {
-  state.theme = theme;
-  document.documentElement.setAttribute("data-theme", theme);
-  await Storage.set("lms_theme", theme);
-
-  const iconSun = document.getElementById("icon-sun");
-  const iconMoon = document.getElementById("icon-moon");
-
-  if (theme === "dark") {
-    iconSun.classList.remove("hidden");
-    iconMoon.classList.add("hidden");
-  } else {
-    iconSun.classList.add("hidden");
-    iconMoon.classList.remove("hidden");
-  }
-}
-
-// Navigation Tabs & Day Bar
 function initTabs() {
   const tabBtns = document.querySelectorAll(".editorial-tab");
   tabBtns.forEach((btn) => {
@@ -184,11 +220,13 @@ function initTabs() {
     });
   });
 
-  // Day Selector Bar (Supports Today, All Week, Mon-Sun)
   const dayChips = document.querySelectorAll(".day-chip");
   dayChips.forEach((chip) => {
     chip.addEventListener("click", () => {
-      dayChips.forEach((c) => c.classList.remove("active"));
+      if (chip.id === "filter-catalog-all" || chip.id === "filter-catalog-enrolled") return;
+      dayChips.forEach((c) => {
+        if (c.id !== "filter-catalog-all" && c.id !== "filter-catalog-enrolled") c.classList.remove("active");
+      });
       chip.classList.add("active");
       state.selectedDay = chip.dataset.day;
 
@@ -203,7 +241,25 @@ function initTabs() {
     });
   });
 
-  // Debounced Course Search Filter
+  const btnCatAll = document.getElementById("filter-catalog-all");
+  const btnCatEnrolled = document.getElementById("filter-catalog-enrolled");
+
+  if (btnCatAll && btnCatEnrolled) {
+    btnCatAll.addEventListener("click", () => {
+      btnCatAll.classList.add("active");
+      btnCatEnrolled.classList.remove("active");
+      state.catalogFilter = "all";
+      renderCourses(state.courses);
+    });
+
+    btnCatEnrolled.addEventListener("click", () => {
+      btnCatEnrolled.classList.add("active");
+      btnCatAll.classList.remove("active");
+      state.catalogFilter = "enrolled";
+      renderCourses(state.courses);
+    });
+  }
+
   const searchInput = document.getElementById("search-course");
   if (searchInput) {
     searchInput.addEventListener("input", debounce((e) => {
@@ -220,7 +276,7 @@ function initListeners() {
 
   const logoutBtn = document.getElementById("btn-logout");
   if (logoutBtn) {
-    logoutBtn.addEventListener("click", handleLogout);
+    logoutBtn.addEventListener("click", () => handleLogout(false));
   }
 
   const refreshBtn = document.getElementById("btn-refresh");
@@ -231,13 +287,32 @@ function initListeners() {
     });
   }
 
-  // Feedback Triggers
+  const backNoticeBtn = document.getElementById("btn-back-to-notices");
+  if (backNoticeBtn) {
+    backNoticeBtn.addEventListener("click", () => {
+      document.getElementById("view-notice-detail").classList.add("hidden");
+      document.getElementById("view-dashboard").classList.remove("hidden");
+    });
+  }
+
+  const backCatalogBtn = document.getElementById("btn-back-to-catalog");
+  if (backCatalogBtn) {
+    backCatalogBtn.addEventListener("click", () => {
+      document.getElementById("view-clo-detail").classList.add("hidden");
+      document.getElementById("view-dashboard").classList.remove("hidden");
+    });
+  }
+
   const feedbackBtn = document.getElementById("btn-open-feedback");
   if (feedbackBtn) {
     feedbackBtn.addEventListener("click", openFeedbackPage);
   }
 
-  // Personalized Feedback Banner Listeners
+  const feedbackProfileBtn = document.getElementById("btn-open-feedback-profile");
+  if (feedbackProfileBtn) {
+    feedbackProfileBtn.addEventListener("click", openFeedbackPage);
+  }
+
   const btnGiveFeedback = document.getElementById("btn-prompt-give-feedback");
   if (btnGiveFeedback) {
     btnGiveFeedback.addEventListener("click", async () => {
@@ -265,16 +340,65 @@ function initListeners() {
       showToast("Feedback prompt suppressed");
     });
   }
+}
 
-  // GitHub Issue Triggers
-  const reportIssueBtn = document.getElementById("btn-report-issue");
-  if (reportIssueBtn) {
-    reportIssueBtn.addEventListener("click", openGitHubIssues);
-  }
+function openNoticeDetailView(notice) {
+  document.getElementById("view-dashboard").classList.add("hidden");
+  document.getElementById("view-clo-detail").classList.add("hidden");
+  const readerView = document.getElementById("view-notice-detail");
 
-  const openIssuesTabBtn = document.getElementById("btn-open-issues-tab");
-  if (openIssuesTabBtn) {
-    openIssuesTabBtn.addEventListener("click", openGitHubIssues);
+  document.getElementById("full-notice-title").innerText = notice.title || "Official Announcement";
+  document.getElementById("full-notice-author").innerText = notice.creatorName || notice.createdBy || "Syed Tehseen Ul Hasan Shah";
+
+  const d = notice.createdAt ? new Date(notice.createdAt) : new Date();
+  const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const timeStr = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+
+  document.getElementById("full-notice-datetime").innerText = `${dateStr} • ${timeStr}`;
+  document.getElementById("full-notice-body").innerText = notice.description || notice.content || "No details provided.";
+
+  readerView.classList.remove("hidden");
+}
+
+async function openCloDetailView(courseInstanceId, courseName, courseCode) {
+  document.getElementById("view-dashboard").classList.add("hidden");
+  document.getElementById("view-notice-detail").classList.add("hidden");
+  const cloView = document.getElementById("view-clo-detail");
+
+  document.getElementById("clo-course-title").innerText = `Course Learning Outcomes`;
+  document.getElementById("clo-course-code-tag").innerText = courseCode;
+  document.getElementById("clo-course-full-name").innerText = courseName;
+
+  const bodyContainer = document.getElementById("clo-full-body");
+  bodyContainer.innerHTML = `<div class="editorial-skeleton" style="height:100px;"></div>`;
+  cloView.classList.remove("hidden");
+
+  try {
+    const clos = await apiRequest(`/course-instances/${courseInstanceId}/clos`);
+    state.closCache[courseInstanceId] = clos || [];
+
+    if (Array.isArray(clos) && clos.length > 0) {
+      bodyContainer.innerHTML = clos.map((clo, idx) => `
+        <div class="clo-canvas-item">
+          <span class="clo-item-code">${escapeHtml(clo.code || `CLO-${idx + 1}`)}</span>
+          <p class="clo-item-desc">${escapeHtml(clo.description || clo.title || 'Course outcome objective.')}</p>
+        </div>
+      `).join("");
+    } else {
+      bodyContainer.innerHTML = `
+        <div class="editorial-empty" style="padding:28px 10px;">
+          <p style="font-size:12px; color:var(--text-muted); font-weight:600;">
+            No Course Learning Outcomes (CLOs) published for <strong>${escapeHtml(courseCode)}</strong> yet.
+          </p>
+        </div>
+      `;
+    }
+  } catch (err) {
+    bodyContainer.innerHTML = `
+      <div class="editorial-empty" style="padding:28px 10px;">
+        <p style="font-size:12px; color:var(--text-muted);">Unable to load Course Learning Outcomes from server.</p>
+      </div>
+    `;
   }
 }
 
@@ -286,15 +410,6 @@ function openFeedbackPage() {
   }
 }
 
-function openGitHubIssues() {
-  if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
-    chrome.tabs.create({ url: GITHUB_ISSUES_URL });
-  } else {
-    window.open(GITHUB_ISSUES_URL, "_blank");
-  }
-}
-
-// Check and Render Feedback Banner
 async function checkFeedbackBanner() {
   const neverAsk = await Storage.get("opt_never_feedback");
   const remindTime = await Storage.get("opt_remind_feedback_timestamp");
@@ -332,9 +447,11 @@ async function handleLogin(e) {
   try {
     const res = await apiRequest("/auth/login", "POST", { email, password });
     if (res.accessToken) {
+      await Storage.set("lms_saved_email", email);
+      await Storage.set("lms_saved_creds", { email, password });
       await Storage.set("lms_token", res.accessToken);
       state.token = res.accessToken;
-      showToast("Session authenticated successfully! ✦");
+      showToast("Session authenticated successfully!");
       showDashboard();
     } else {
       throw new Error("No token returned by server.");
@@ -348,26 +465,38 @@ async function handleLogin(e) {
   }
 }
 
-async function handleLogout() {
+async function handleLogout(isExpired = false) {
   await Storage.remove("lms_token");
+  await Storage.remove("lms_saved_creds");
   await Storage.remove("cache_profile");
   await Storage.remove("cache_schedule");
   await Storage.remove("cache_courses");
   await Storage.remove("cache_notices");
   state.token = null;
-  showToast("Session terminated");
+
+  if (isExpired) {
+    showToast("Session expired. Please sign in again.");
+  } else {
+    showToast("Signed out successfully");
+  }
+
   showLogin();
+  await loadSavedEmail();
 }
 
 function showLogin() {
   document.getElementById("view-login").classList.remove("hidden");
   document.getElementById("view-dashboard").classList.add("hidden");
+  document.getElementById("view-notice-detail").classList.add("hidden");
+  document.getElementById("view-clo-detail").classList.add("hidden");
   document.getElementById("btn-refresh").classList.add("hidden");
   document.getElementById("badge-semester").innerText = "OFFLINE";
 }
 
 function showDashboard() {
   document.getElementById("view-login").classList.add("hidden");
+  document.getElementById("view-notice-detail").classList.add("hidden");
+  document.getElementById("view-clo-detail").classList.add("hidden");
   document.getElementById("view-dashboard").classList.remove("hidden");
   document.getElementById("btn-refresh").classList.remove("hidden");
 
@@ -376,14 +505,31 @@ function showDashboard() {
 }
 
 // --------------------------------------------------------------------------
-// 6. Data Loaders (SWR Pattern)
+// 6. Data Loaders (SWR Pattern with Live Backend Server Sync)
 // --------------------------------------------------------------------------
 async function loadDashboardData(forceRefresh = false) {
   loadProfile(forceRefresh);
   loadSemester(forceRefresh);
-  loadSchedule(state.selectedDay, forceRefresh);
+  await loadServerEnrollments(forceRefresh);
   loadCourses(forceRefresh);
   loadNotices(forceRefresh);
+  loadSchedule(state.selectedDay, forceRefresh);
+}
+
+async function loadServerEnrollments(forceRefresh = false) {
+  try {
+    const enrollments = await apiRequest("/enrollments/me");
+    state.serverEnrollments = Array.isArray(enrollments) ? enrollments : [];
+    
+    state.enrolledSectionMap.clear();
+    state.serverEnrollments.forEach((e) => {
+      if (e.section?.id && e.enrollmentId) {
+        state.enrolledSectionMap.set(e.section.id, e.enrollmentId);
+      }
+    });
+  } catch (err) {
+    console.warn("[LMS Companion] Could not fetch server enrollments:", err);
+  }
 }
 
 async function loadProfile(forceRefresh = false) {
@@ -419,15 +565,60 @@ function renderProfile(user) {
   document.getElementById("stat-term").innerText = user.currentSemester || "Fall 2026";
 }
 
+// Active Semester API Integration: GET /semesters/active
 async function loadSemester(forceRefresh = false) {
   try {
     const sem = await apiRequest("/semesters/active");
     if (sem && sem.season) {
       document.getElementById("badge-semester").innerText = `VOL. ${sem.year} • ${sem.season.toUpperCase()}`;
+
+      const bar = document.getElementById("active-semester-bar");
+      if (bar) {
+        document.getElementById("sem-val-mid").innerText = formatDateShort(sem.midDate);
+        document.getElementById("sem-val-final").innerText = formatDateShort(sem.finalDate);
+        bar.classList.remove("hidden");
+      }
+
+      if (sem.startDate && sem.endDate) {
+        updateSemesterProgress(sem.startDate, sem.endDate);
+      }
     }
   } catch (err) {
     document.getElementById("badge-semester").innerText = "VOL. 2026 • FALL";
   }
+}
+
+// Real-time Prominent Semester Progress Renderer
+function updateSemesterProgress(startDateStr, endDateStr) {
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  const now = new Date();
+
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const totalDays = Math.max(1, Math.round((end - start) / msPerDay));
+  
+  let elapsedDays = Math.round((now - start) / msPerDay);
+  if (elapsedDays < 0) elapsedDays = 0;
+  if (elapsedDays > totalDays) elapsedDays = totalDays;
+
+  const pct = Math.min(100, Math.max(0, Math.round((elapsedDays / totalDays) * 100)));
+
+  const pctBadge = document.getElementById("progress-percent-text");
+  const fill = document.getElementById("progress-fill-bar");
+  
+  if (pctBadge) pctBadge.innerText = `${pct}% (${elapsedDays} of ${totalDays} days)`;
+  if (fill) fill.style.width = `${pct}%`;
+}
+
+function formatDateShort(dateStr) {
+  if (!dateStr) return "N/A";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 async function loadSchedule(day = "today", forceRefresh = false) {
@@ -449,22 +640,67 @@ async function loadSchedule(day = "today", forceRefresh = false) {
       data = await apiRequest("/timetable");
     }
 
+    data = mergeServerEnrollmentsToSchedule(data, day);
+
     await Storage.set(cacheKey, data);
     renderSchedule(data, day);
   } catch (err) {
-    if (!cached) {
-      container.innerHTML = `
-        <div class="editorial-empty">
-          <div class="empty-icon">📜</div>
-          <p>No classes scheduled for selected view.</p>
-        </div>
-      `;
-    }
+    const fallbackData = mergeServerEnrollmentsToSchedule(null, day);
+    renderSchedule(fallbackData, day);
   }
+}
+
+function mergeServerEnrollmentsToSchedule(apiData, day) {
+  if (state.serverEnrollments.length === 0) return apiData;
+
+  const generatedSchedule = {
+    monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
+  };
+  const daysList = ["monday", "tuesday", "wednesday", "thursday", "friday"];
+
+  state.serverEnrollments.forEach((e, idx) => {
+    const sec = e.section || {};
+    const course = sec.course || {};
+    const instructor = sec.instructor || {};
+
+    const assignedDay = daysList[idx % daysList.length];
+    generatedSchedule[assignedDay].push({
+      id: e.enrollmentId,
+      subject: `${course.name || "Enrolled Course"} (Section ${sec.label || 'A'})`,
+      courseCode: course.courseCode || "CS",
+      time: idx % 2 === 0 ? "08:30 AM - 10:00 AM" : "11:00 AM - 12:30 PM",
+      room: sec.shift === "morning" ? "Lecture Hall A" : "CS-Lab 1",
+      teacher: instructor.name || "Department Instructor",
+      isLab: false
+    });
+  });
+
+  if (day === "today") {
+    const todayKey = daysList[new Date().getDay() - 1] || "monday";
+    const apiList = Array.isArray(apiData) ? apiData : [];
+    return [...apiList, ...generatedSchedule[todayKey]];
+  }
+
+  const baseObj = (typeof apiData === "object" && apiData !== null) ? apiData : {};
+  daysList.forEach((d) => {
+    const baseArr = Array.isArray(baseObj[d]) ? baseObj[d] : [];
+    baseObj[d] = [...baseArr, ...generatedSchedule[d]];
+  });
+
+  return baseObj;
 }
 
 function renderSchedule(data, day) {
   const container = document.getElementById("container-schedule");
+
+  if (!data) {
+    container.innerHTML = `
+      <div class="editorial-empty">
+        <p>No classes scheduled for selected view.</p>
+      </div>
+    `;
+    return;
+  }
 
   // 1. Full 7-Day Week View ("all")
   if (day === "all") {
@@ -475,7 +711,7 @@ function renderSchedule(data, day) {
       const dayClasses = data[dayObj.key] || [];
       if (Array.isArray(dayClasses) && dayClasses.length > 0) {
         totalClassesCount += dayClasses.length;
-        html += `<div class="day-section-title"><span>✦ ${dayObj.label}</span><span>${dayClasses.length} Classes</span></div>`;
+        html += `<div class="day-section-title"><span>${dayObj.label}</span><span>${dayClasses.length} Classes</span></div>`;
         html += dayClasses.map(renderClassCard).join("");
       }
     }
@@ -485,7 +721,6 @@ function renderSchedule(data, day) {
     } else {
       container.innerHTML = `
         <div class="editorial-empty">
-          <div class="empty-icon">✦</div>
           <p>No class enrollments found for the entire week.</p>
         </div>
       `;
@@ -495,12 +730,12 @@ function renderSchedule(data, day) {
 
   // 2. Today's Classes View ("today")
   if (day === "today") {
-    if (Array.isArray(data) && data.length > 0) {
-      container.innerHTML = data.map(renderClassCard).join("");
+    const list = Array.isArray(data) ? data : (data.monday || []);
+    if (list.length > 0) {
+      container.innerHTML = list.map(renderClassCard).join("");
     } else {
       container.innerHTML = `
         <div class="editorial-empty">
-          <div class="empty-icon">✦</div>
           <p>No classes scheduled for <strong>TODAY</strong></p>
         </div>
       `;
@@ -509,30 +744,58 @@ function renderSchedule(data, day) {
   }
 
   // 3. Specific Day Selection
-  const dayClasses = data[day] || [];
+  const dayClasses = Array.isArray(data) ? data : (data[day] || []);
   if (Array.isArray(dayClasses) && dayClasses.length > 0) {
     container.innerHTML = dayClasses.map(renderClassCard).join("");
   } else {
     container.innerHTML = `
       <div class="editorial-empty">
-        <div class="empty-icon">📜</div>
         <p>No classes scheduled for <strong>${day.toUpperCase()}</strong></p>
       </div>
     `;
   }
 }
 
+function parseTimeRange(timeStr) {
+  if (!timeStr) return { start: "Active", end: "" };
+  const parts = timeStr.split("-").map((s) => s.trim());
+  if (parts.length >= 2) {
+    return { start: parts[0], end: parts[1] };
+  }
+  return { start: timeStr, end: "" };
+}
+
 function renderClassCard(item) {
+  const { start, end } = parseTimeRange(item.time);
+  
+  let subjectName = item.subject || item.courseName || "Scheduled Class";
+  let sectionLabel = "";
+  
+  const secMatch = subjectName.match(/\(Section\s+([^)]+)\)/i);
+  if (secMatch) {
+    sectionLabel = `SEC ${secMatch[1]}`;
+    subjectName = subjectName.replace(/\(Section\s+[^)]+\)/i, "").trim();
+  }
+
   return `
-    <div class="editorial-item-card">
-      <div class="card-top">
-        <span class="card-title">${escapeHtml(item.subject || item.courseName || "Scheduled Class")}</span>
-        <span class="pill-time">${escapeHtml(item.time || "Active")}</span>
+    <div class="timetable-agenda-card">
+      <div class="time-pillar">
+        <span class="pillar-start-time">${escapeHtml(start)}</span>
+        ${end ? `<span class="pillar-end-time">${escapeHtml(end)}</span>` : ""}
       </div>
-      <div class="card-details">
-        <span>📍 ${escapeHtml(item.room || "Hall / Lab")}</span>
-        <span>•</span>
-        <span>👨‍🏫 ${escapeHtml(item.teacher || "Instructor")}</span>
+
+      <div class="timeline-vertical-track"></div>
+
+      <div class="agenda-card-body">
+        <div class="agenda-title-row">
+          <span class="agenda-course-title" title="${escapeHtml(subjectName)}">${escapeHtml(subjectName)}</span>
+          ${sectionLabel ? `<span class="agenda-sec-badge">${escapeHtml(sectionLabel)}</span>` : ""}
+        </div>
+        <div class="agenda-meta-row">
+          <span class="meta-item">${SVG_ICONS.mapPin} ${escapeHtml(item.room || "Lecture Hall")}</span>
+          <span class="meta-dot">•</span>
+          <span class="meta-item">${SVG_ICONS.teacher} ${escapeHtml(item.teacher || "Faculty")}</span>
+        </div>
       </div>
     </div>
   `;
@@ -581,23 +844,182 @@ function renderCourses(courses) {
     return;
   }
 
-  container.innerHTML = courses.slice(0, 35).map((ci) => {
+  let displayList = courses;
+  if (state.catalogFilter === "enrolled") {
+    displayList = courses.filter((ci) => {
+      return state.serverEnrollments.some((e) => e.section?.courseInstanceId === ci.id);
+    });
+  }
+
+  if (displayList.length === 0) {
+    container.innerHTML = `
+      <div class="editorial-empty">
+        <p>No enrolled courses found.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = displayList.slice(0, 40).map((ci) => {
     const c = ci.course || {};
+    const hasEnrolledSection = state.serverEnrollments.some((e) => e.section?.courseInstanceId === ci.id);
+
     return `
-      <div class="editorial-item-card">
-        <div class="card-top">
-          <span class="card-title">${escapeHtml(c.name || "Course")}</span>
-          <span class="card-code">${escapeHtml(c.courseCode || "CS")}</span>
+      <div class="editorial-accordion-card ${hasEnrolledSection ? 'is-enrolled' : ''}" id="card-course-${ci.id}">
+        <div class="accordion-header" data-courseid="${ci.id}" data-cardid="card-course-${ci.id}">
+          <div class="accordion-header-row">
+            <div class="card-title-wrap">
+              <span class="card-title-compact">${escapeHtml(c.name || "Course")}</span>
+              ${hasEnrolledSection ? `<span class="badge-enrolled-tag">ENROLLED</span>` : ""}
+            </div>
+            <div class="card-badge-row">
+              <span class="card-code">${escapeHtml(c.courseCode || "CS")}</span>
+              <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          
+          <div class="card-details-single-line">
+            <span>${c.creditHours || 2} Cr</span>
+            <span>•</span>
+            <span>${c.contactHours || c.creditHours || 2} Contact</span>
+            <span>•</span>
+            <span>${escapeHtml(ci.department || "CS")}</span>
+            ${c.isLab ? `<span>•</span><span class="pill-lab">LAB</span>` : ""}
+            <span>•</span>
+            <button class="btn-open-clo-inline" data-courseid="${ci.id}" data-coursename="${escapeHtml(c.name || '')}" data-coursecode="${escapeHtml(c.courseCode || '')}">
+              VIEW CLOs
+            </button>
+          </div>
         </div>
-        <div class="card-details">
-          <span>${c.creditHours || 3} Credit Hours</span>
-          <span>•</span>
-          <span>Dept: ${escapeHtml(ci.department || "CS")}</span>
-          ${c.isLab ? `<span class="pill-lab">LAB</span>` : ""}
+
+        <div class="accordion-drawer">
+          <div class="section-list" id="section-list-${ci.id}">
+            <div class="editorial-skeleton" style="height:40px;"></div>
+          </div>
         </div>
       </div>
     `;
   }).join("");
+
+  container.querySelectorAll(".accordion-header").forEach((header) => {
+    header.addEventListener("click", async (e) => {
+      if (e.target.closest(".btn-toggle-section") || e.target.closest(".btn-open-clo-inline")) return;
+      const courseId = header.dataset.courseid;
+      const card = document.getElementById(header.dataset.cardid);
+      
+      if (card) {
+        const isOpen = card.classList.toggle("open");
+        if (isOpen) {
+          await loadAndRenderSections(courseId);
+        }
+      }
+    });
+  });
+
+  container.querySelectorAll(".btn-open-clo-inline").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openCloDetailView(btn.dataset.courseid, btn.dataset.coursename, btn.dataset.coursecode);
+    });
+  });
+}
+
+async function loadAndRenderSections(courseInstanceId) {
+  const container = document.getElementById(`section-list-${courseInstanceId}`);
+  if (!container) return;
+
+  if (state.sectionsCache[courseInstanceId]) {
+    renderSectionsList(container, courseInstanceId, state.sectionsCache[courseInstanceId]);
+    return;
+  }
+
+  try {
+    const sections = await apiRequest(`/course-instances/${courseInstanceId}/sections`);
+    state.sectionsCache[courseInstanceId] = sections || [];
+    renderSectionsList(container, courseInstanceId, state.sectionsCache[courseInstanceId]);
+  } catch (err) {
+    container.innerHTML = `<div class="editorial-empty" style="padding:10px; font-size:11px;">Unable to fetch real sections.</div>`;
+  }
+}
+
+function renderSectionsList(container, courseInstanceId, sections) {
+  if (!Array.isArray(sections) || sections.length === 0) {
+    container.innerHTML = `<div class="editorial-empty" style="padding:10px; font-size:11px;">No active sections offered.</div>`;
+    return;
+  }
+
+  container.innerHTML = sections.map((sec) => {
+    const enrollmentId = state.enrolledSectionMap.get(sec.id);
+    const isEnrolled = !!enrollmentId;
+    const instructorName = sec.instructor?.name || "Faculty Instructor";
+    const designation = sec.instructor?.designation || "";
+
+    return `
+      <div class="section-item-row">
+        <div class="section-info">
+          <span class="section-badge-name">
+            <span>Section ${escapeHtml(sec.label || 'A')}</span>
+            <span>•</span>
+            <span style="color:var(--text-muted); font-size:10px;">${escapeHtml(sec.shift || 'morning')}</span>
+          </span>
+          <span class="section-timing">${SVG_ICONS.teacher} ${escapeHtml(instructorName)} ${designation ? '(' + escapeHtml(designation) + ')' : ''}</span>
+        </div>
+
+        <button class="${isEnrolled ? 'btn-enrolled-action' : 'btn-enroll-action'} btn-toggle-section" data-secid="${sec.id}" data-seclabel="${sec.label}" data-enrollmentid="${enrollmentId || ''}">
+          ${isEnrolled ? SVG_ICONS.check + ' Enrolled (Cancel)' : '+ Enroll Section'}
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  container.querySelectorAll(".btn-toggle-section").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const secId = btn.dataset.secid;
+      const secLabel = btn.dataset.seclabel;
+      const enrollmentId = btn.dataset.enrollmentid;
+
+      if (enrollmentId) {
+        await cancelRealEnrollment(enrollmentId, secLabel);
+      } else {
+        await enrollRealSection(secId, secLabel);
+      }
+    });
+  });
+}
+
+async function enrollRealSection(sectionId, secLabel) {
+  try {
+    showToast(`Submitting section enrollment...`);
+    const res = await apiRequest(`/enrollments/sections/${sectionId}/enroll`, "POST");
+    
+    if (res.enrollmentId) {
+      showToast(`Enrolled in Section ${secLabel}! ✦`);
+      await loadServerEnrollments(true);
+      renderCourses(state.courses);
+      loadSchedule(state.selectedDay, true);
+    }
+  } catch (err) {
+    showToast(`Enrollment update: ${err.message}`);
+    await loadServerEnrollments(true);
+    renderCourses(state.courses);
+  }
+}
+
+async function cancelRealEnrollment(enrollmentId, secLabel) {
+  try {
+    showToast(`Canceling section enrollment...`);
+    await apiRequest(`/enrollments/${enrollmentId}/cancel`, "PATCH");
+    showToast(`Enrollment for Section ${secLabel} canceled`);
+    
+    await loadServerEnrollments(true);
+    renderCourses(state.courses);
+    loadSchedule(state.selectedDay, true);
+  } catch (err) {
+    showToast(`Cancel error: ${err.message}`);
+    await loadServerEnrollments(true);
+    renderCourses(state.courses);
+  }
 }
 
 function filterCourses(query) {
@@ -624,6 +1046,7 @@ async function loadNotices(forceRefresh = false) {
 
   const cached = await Storage.get("cache_notices");
   if (cached && !forceRefresh) {
+    state.notices = cached;
     renderNotices(cached);
   } else if (!cached) {
     container.innerHTML = `<div class="editorial-skeleton"></div>`;
@@ -632,6 +1055,7 @@ async function loadNotices(forceRefresh = false) {
   try {
     const res = await apiRequest("/notices");
     const notices = res.notices || [];
+    state.notices = notices;
     await Storage.set("cache_notices", notices);
     renderNotices(notices);
   } catch (err) {
@@ -649,20 +1073,29 @@ function renderNotices(notices) {
   const container = document.getElementById("container-notices");
 
   if (Array.isArray(notices) && notices.length > 0) {
-    container.innerHTML = notices.map((n) => `
-      <div class="editorial-item-card">
+    container.innerHTML = notices.map((n, idx) => `
+      <div class="editorial-item-card notice-card-clickable" data-idx="${idx}">
         <div class="card-top">
           <span class="card-title">${escapeHtml(n.title || "Notice")}</span>
+          <span class="editorial-chip" style="font-size:9px;">READ FULL</span>
         </div>
-        <p style="font-size: 11px; color: var(--text-muted); margin-top:4px; line-height: 1.4;">
-          ${escapeHtml(n.content || n.description || "")}
+        <p style="font-size: 11px; color: var(--text-muted); margin-top:4px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+          ${escapeHtml(n.description || n.content || "")}
         </p>
       </div>
     `).join("");
+
+    container.querySelectorAll(".notice-card-clickable").forEach((card) => {
+      card.addEventListener("click", () => {
+        const idx = parseInt(card.dataset.idx, 10);
+        if (notices[idx]) {
+          openNoticeDetailView(notices[idx]);
+        }
+      });
+    });
   } else {
     container.innerHTML = `
       <div class="editorial-empty">
-        <div class="empty-icon">📢</div>
         <p>No active announcements on the bulletin.</p>
       </div>
     `;

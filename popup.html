@@ -31,18 +31,9 @@
       </div>
 
       <div class="header-actions">
-        <!-- Give Feedback Page Button -->
+        <!-- Unified Feedback Button -->
         <button id="btn-open-feedback" class="editorial-icon-btn" title="Give Feedback" aria-label="Give Feedback">
           <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        </button>
-        <!-- Report Issue Button -->
-        <button id="btn-report-issue" class="editorial-icon-btn" title="Report Issue on GitHub" aria-label="Report Issue">
-          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        </button>
-        <!-- Theme Toggle Button -->
-        <button id="btn-theme-toggle" class="editorial-icon-btn" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
-          <svg id="icon-sun" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-          <svg id="icon-moon" class="svg-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
         <!-- Refresh Button -->
         <button id="btn-refresh" class="editorial-icon-btn hidden" title="Refresh Data" aria-label="Refresh Data">
@@ -56,9 +47,9 @@
       <span id="toast-message">Notification</span>
     </div>
 
-    <!-- VIEW 1: AUTHENTICATION / LOGIN -->
+    <!-- VIEW 1: AUTHENTICATION / LOGIN (CONTAINER-LESS CANVAS NATIVE) -->
     <main id="view-login" class="view-panel">
-      <div class="editorial-card login-card">
+      <div class="login-canvas-container">
         <div class="login-header">
           <span class="editorial-kicker">EARLY ACCESS • BETA V0.1.0</span>
           <h2 class="editorial-heading">Sign In to Journal</h2>
@@ -94,6 +85,8 @@
           </button>
         </form>
 
+        <hr class="editorial-rule">
+
         <div class="login-footer">
           <p>UET COMPUTER SCIENCE • OFFICIAL DIRECTORY</p>
         </div>
@@ -103,9 +96,9 @@
     <!-- VIEW 2: MAIN DASHBOARD -->
     <main id="view-dashboard" class="view-panel hidden">
       <!-- Personalized Feedback Prompt Banner -->
-      <div id="banner-feedback-prompt" class="editorial-card feedback-banner hidden">
+      <div id="banner-feedback-prompt" class="feedback-banner hidden">
         <div class="feedback-banner-header">
-          <span class="editorial-kicker">COMMUNITY VOICE ✦</span>
+          <span class="editorial-kicker">COMMUNITY VOICE</span>
           <h4 class="feedback-banner-title">Enjoying LMS Companion?</h4>
           <p class="feedback-banner-sub">Help us refine the extension experience with your feedback.</p>
         </div>
@@ -137,13 +130,38 @@
           <span>Notices</span>
         </button>
         <button class="editorial-tab" data-target="tab-profile">
-          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span>Profile</span>
         </button>
       </nav>
 
       <!-- TAB 1: SCHEDULE -->
       <section id="tab-schedule" class="tab-pane active">
+        <!-- Prominent Compact Semester Timeline Box with Full-Width Progress Track -->
+        <div id="active-semester-bar" class="semester-timeline-box hidden">
+          <div class="semester-bar-top">
+            <div class="semester-timeline-item">
+              <span class="timeline-label">MIDS</span>
+              <span id="sem-val-mid" class="timeline-value">Oct 26</span>
+            </div>
+            <span class="timeline-dot">•</span>
+            <div class="semester-timeline-item">
+              <span class="timeline-label">FINALS</span>
+              <span id="sem-val-final" class="timeline-value">Dec 18</span>
+            </div>
+            <span class="timeline-dot">•</span>
+            <div class="semester-timeline-item" style="align-items: flex-end;">
+              <span class="timeline-label">PROGRESS</span>
+              <span id="progress-percent-text" class="timeline-value" style="font-size:10.5px; font-weight:900;">2% (2 of 124 days)</span>
+            </div>
+          </div>
+
+          <!-- Full-Width High-Contrast Progress Bar Track -->
+          <div class="progress-track-prominent">
+            <div id="progress-fill-bar" class="progress-fill-prominent" style="width: 2%;"></div>
+          </div>
+        </div>
+
         <div class="pane-header">
           <h3 class="editorial-title">TIMETABLE DIRECTORY</h3>
           <span id="schedule-date-label" class="editorial-chip">TODAY</span>
@@ -174,6 +192,12 @@
           <span id="course-count-chip" class="editorial-chip">51 COURSES</span>
         </div>
 
+        <!-- Catalog Filter Chips -->
+        <div class="editorial-day-bar" style="margin-bottom: 2px;">
+          <button id="filter-catalog-all" class="day-chip active" style="min-width:90px;">All Courses</button>
+          <button id="filter-catalog-enrolled" class="day-chip" style="min-width:110px;">Enrolled Only</button>
+        </div>
+
         <div class="search-box">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" id="search-course" placeholder="Filter courses by code or title (e.g. ADMS, CSC207)...">
@@ -196,19 +220,25 @@
         </div>
       </section>
 
-      <!-- TAB 4: PROFILE -->
+      <!-- TAB 4: PROFILE (CONTAINER-LESS CANVAS NATIVE) -->
       <section id="tab-profile" class="tab-pane">
-        <div class="editorial-card profile-box">
-          <div class="profile-avatar-wrap">
-            <div id="user-avatar-initial" class="editorial-monogram-lg">ST</div>
+        <div class="profile-canvas-container">
+          <!-- User Header Row -->
+          <div class="profile-compact-header">
+            <div id="user-avatar-initial" class="editorial-monogram-md">ST</div>
+            <div class="profile-user-info">
+              <div class="profile-name-row">
+                <h3 id="user-full-name" class="user-name-compact">Student Name</h3>
+                <span class="editorial-pill-active">ACTIVE</span>
+              </div>
+              <p id="user-reg-no" class="user-reg-compact">2025-CS-136</p>
+              <p id="user-email-text" class="user-email-compact">student@student.uet.edu.pk</p>
+            </div>
           </div>
-          
-          <h3 id="user-full-name" class="user-name">Student Name</h3>
-          <p id="user-reg-no" class="user-reg">N/A</p>
-          <p id="user-email-text" class="user-email">student@student.uet.edu.pk</p>
 
           <hr class="editorial-rule">
 
+          <!-- 3-Column Stats Grid -->
           <div class="profile-stats-grid">
             <div class="stat-editorial-box">
               <span class="stat-num" id="stat-role">Student</span>
@@ -226,29 +256,90 @@
 
           <div class="profile-meta-list">
             <div class="meta-row">
-              <span>Account Status</span>
-              <span class="editorial-pill-active">Active Candidate</span>
-            </div>
-            <div class="meta-row">
               <span>Institution</span>
               <span>UET Computer Science</span>
             </div>
           </div>
 
-          <button id="btn-open-issues-tab" class="editorial-btn-secondary" style="margin-top: 4px;">
-            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-            <span>Report Issue on GitHub</span>
-          </button>
+          <div class="profile-actions-row">
+            <button id="btn-open-feedback-profile" class="editorial-btn-secondary" style="min-height:36px; padding:6px 10px; font-size:11px;">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span>Feedback</span>
+            </button>
 
-          <button id="btn-logout" class="editorial-btn-danger">
-            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span>Terminate Session</span>
-          </button>
+            <button id="btn-logout" class="editorial-btn-danger" style="min-height:36px; padding:6px 10px; font-size:11px;">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
       </section>
     </main>
 
-    <!-- Footer Branding -->
+    <!-- VIEW 3: GAZETTE READER (NOTICE DETAIL) -->
+    <main id="view-notice-detail" class="view-panel hidden">
+      <article class="notice-single-line-article">
+        <!-- Single Horizontal Header Line -->
+        <div class="notice-single-line-header">
+          <button id="btn-back-to-notices" class="btn-plain-arrow" title="Back to Gazette" aria-label="Back">
+            <svg class="svg-icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+
+          <h1 id="full-notice-title" class="notice-single-line-title">Notice Headline</h1>
+
+          <span id="full-notice-datetime" class="notice-single-line-date">Aug 25, 2026 • 06:16 PM</span>
+        </div>
+
+        <!-- Author Byline -->
+        <div class="notice-clean-byline">
+          <svg class="inline-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>By</span>
+          <span id="full-notice-author" class="author-name">Syed Tehseen Ul Hasan Shah</span>
+          <span>• Faculty of Computer Science</span>
+        </div>
+
+        <!-- Dashed Divider Rule -->
+        <hr class="editorial-rule">
+
+        <!-- Full Notice Body -->
+        <div id="full-notice-body" class="notice-clean-body">
+          Notice content goes here...
+        </div>
+      </article>
+    </main>
+
+    <!-- VIEW 4: FULL-SCREEN COURSE LEARNING OUTCOMES (CLOs) READER VIEW -->
+    <main id="view-clo-detail" class="view-panel hidden">
+      <article class="notice-single-line-article">
+        <!-- Single Horizontal Header Line -->
+        <div class="notice-single-line-header">
+          <button id="btn-back-to-catalog" class="btn-plain-arrow" title="Back to Catalog" aria-label="Back">
+            <svg class="svg-icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+
+          <h1 id="clo-course-title" class="notice-single-line-title">Course Learning Outcomes</h1>
+
+          <span id="clo-course-code-tag" class="notice-single-line-date">CSC207</span>
+        </div>
+
+        <!-- Course Byline -->
+        <div class="notice-clean-byline">
+          <svg class="inline-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span id="clo-course-full-name" class="author-name">Advanced Database Management Systems</span>
+          <span>• UET CS Curriculum</span>
+        </div>
+
+        <!-- Dashed Divider Rule -->
+        <hr class="editorial-rule">
+
+        <!-- Full CLO List Body -->
+        <div id="clo-full-body" class="notice-clean-body">
+          Loading CLOs...
+        </div>
+      </article>
+    </main>
+
+    <!-- Compact Footer Branding -->
     <footer class="editorial-footer">
       <span>Curated by <a href="https://github.com/hanan-bhatti" target="_blank" class="footer-link">Abdul Hannan Bhatti</a> • UET CS</span>
     </footer>

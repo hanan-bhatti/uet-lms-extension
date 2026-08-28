@@ -1,40 +1,44 @@
-# 🎓 UET LMS Companion — Anti-Slop Editorial Chrome Extension (Beta v0.1.0)
+# 🎓 UET LMS Companion — Chrome Extension (Beta v0.1.0)
 
-![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-1d3557?style=for-the-badge&logo=googlechrome&logoColor=white)
-![Design System](https://img.shields.io/badge/Design_System-Editorial_Serif-e63946?style=for-the-badge)
-![License](https://img.shields.io/badge/License-AGPL--3.0-059669?style=for-the-badge)
-![API Backend](https://img.shields.io/badge/API-NestJS_JWT-457b9d?style=for-the-badge)
+![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-212529?style=for-the-badge&logo=googlechrome&logoColor=white)
+![Design System](https://img.shields.io/badge/Design_System-Monochrome_Dark-343a40?style=for-the-badge)
+![License](https://img.shields.io/badge/License-AGPL--3.0-495057?style=for-the-badge)
+![API Backend](https://img.shields.io/badge/API-NestJS_JWT-6c757d?style=for-the-badge)
 
-A high-craft **Editorial Design Manifest V3 Chrome Extension** for students at the **University of Engineering & Technology (UET) Department of Computer Science**. Built directly on top of the reverse-engineered **NestJS REST API** (`https://api-lms.iotpro.uk/`), delivering real-time class timetables, interactive course search, live bulletin notice boards, and student analytics.
+A high-craft **Manifest V3 Chrome Extension** for students at the **University of Engineering & Technology (UET) Department of Computer Science**. Built directly on top of the reverse-engineered **NestJS REST API** (`https://api-lms.iotpro.uk/`), delivering real-time class timetables, interactive course catalog search, real-time section enrollments, canvas-native Course Learning Outcomes (CLOs), live bulletin notice boards, and student analytics.
 
 > **Developer & Author**: [Abdul Hannan Bhatti](https://github.com/hanan-bhatti) • [Portfolio Website](https://hanan-bhatti.site/)
 
 ---
 
-## 🎨 Color Palette & Design Tokens
+## 🎨 Color Palette & Monochrome Design System
 
-Designed using a high-contrast editorial color system:
+Designed using a refined high-contrast monochrome dark color palette:
 
 ```css
---punch-red:    #e63946; /* Vivid Crimson Punch - Primary Buttons & Active Badges */
---honeydew:     #f1faee; /* Soft Pale Mint - Light Mode Canvas & Text Contrast */
---frosted-blue: #a8dadc; /* Frosted Blue - Soft Highlights & Time Badges */
---cerulean:     #457b9d; /* Deep Cerulean - Secondary Text, Borders & Subtitles */
---oxford-navy:  #1d3557; /* Rich Oxford Navy - Dark Mode Canvas & Monogram Logo */
+--bright-snow:    #f8f9fa; /* High-Contrast Headings & Primary Text */
+--platinum:       #e9ecef; /* Body Text & Elevated Accents */
+--alabaster-grey: #dee2e6; /* Active Borders & Divider Rules */
+--pale-slate:     #ced4da; /* Subtle Borders & Outline Focus Rings */
+--pale-slate-2:   #adb5bd; /* Muted Metadata, Timings & Subtitles */
+--slate-grey:     #6c757d; /* Inactive Tabs & Secondary Action Borders */
+--iron-grey:      #495057; /* Primary Active Buttons & Elevated Monograms */
+--gunmetal:       #343a40; /* Card Containers, Headers & Navigation Bar */
+--carbon-black:   #212529; /* Primary Page Background Canvas */
 ```
 
 ---
 
-## 🚀 Features & Extension Architecture
+## 🚀 Key Features & Architecture
 
-- ⚡ **Manifest V3 Background Service Worker (`background.js`)**: Runs periodic alarms (`chrome.alarms`) in the background to sync class timetables and display dynamic class counters on the extension badge icon (`chrome.action.setBadgeText`).
-- 🔑 **Secure Authentication**: Connects securely to `POST /auth/login` and stores JWT session tokens in encrypted Chrome local storage.
-- 📅 **Full 7-Day Timetable**: View today's schedule or inspect the entire week (`Mon`–`Sun`) with daily section dividers and instructor info.
-- 📚 **Course Catalog & Live Search**: Instant debounced search across **51+ course offerings** with credit hour badges and lab tags.
-- 📢 **Gazette & Bulletin Board**: Real-time access to department notices and academic announcements.
-- ⚙️ **Custom Preferences (`options.html`)**: Configurable background sync frequency, badge counters, and default tab startup view.
-- 👤 **Student Directory & Profile**: Displays student registration number, academic role, and current semester details.
-- 🐛 **Built-in Issue Tracker Integration**: Direct one-click trigger to submit GitHub issue reports.
+- ⚡ **Manifest V3 Service Worker (`background.js`)**: Background alarms (`chrome.alarms`) sync class timetables and update dynamic class counters on the extension badge icon (`chrome.action.setBadgeText`).
+- 🔑 **Secure Auth & Silent Refresh**: Connects securely to `POST /auth/login`, stores JWT tokens in encrypted Chrome storage, and silently refreshes expired sessions automatically.
+- 📅 **Full 7-Day Timetable**: Inspect daily schedules for Today, All Week, or specific weekdays (`Mon`–`Sun`) with instructor designations and lecture hall locations.
+- 📚 **Course Catalog & Real Section Enrollments**: Search across 51+ course offerings, inspect real section instructors, and submit or cancel section enrollments with live backend REST API sync (`POST /enrollments/sections/:id/enroll` & `PATCH /enrollments/:id/cancel`).
+- 📖 **Canvas-Native Course Learning Outcomes (CLO Reader)**: Full-screen canvas reader view fetching live CLOs directly from the NestJS Postgres database (`GET /course-instances/:id/clos`).
+- 📢 **Gazette & Bulletin Board**: Full-screen single-line reader view for official department announcements and faculty notices.
+- 👤 **Ultra-Compact Profile**: Monogram avatar, student registration number, current semester info, 3-column stats grid, and quick actions.
+- 💬 **Container-Less Community Feedback Page**: Standalone feedback submitter (`feedback.html`) with custom select dropdown styling, rating stars, and GitHub issue tracker integration.
 
 ---
 
@@ -61,7 +65,7 @@ Designed using a high-contrast editorial color system:
    - Select the `uet-lms-extension` directory.
 
 5. **Sign In**:
-   - Launch the extension popup and enter your official UET LMS email (`e.g., student@student.uet.edu.pk`) and password.
+   - Launch the extension popup and enter your official UET LMS credentials (`e.g., student@student.uet.edu.pk`).
 
 ---
 
@@ -71,14 +75,16 @@ Designed using a high-contrast editorial color system:
 uet-lms-extension/
 ├── manifest.json       # Chrome Manifest V3 configuration & permissions
 ├── background.js       # Background Service Worker, Alarms & Badge Sync
-├── popup.html          # HTML5 Editorial Journal Layout (Playfair Display & Outfit)
-├── popup.css           # Editorial Design System tokens (Oxford Navy & Punch Red)
+├── popup.html          # HTML5 Journal Layout (Playfair Display & Outfit)
+├── popup.css           # Monochrome Dark Design System tokens
 ├── popup.js            # Async REST API Client, SWR Caching, & Search Filter
+├── feedback.html       # Container-less Community Feedback Submitter
+├── feedback.js         # Feedback Form Controller & Star Rating Handler
 ├── options.html        # Extension Options & Preferences UI
 ├── options.js          # Options Controller (Background alarms & storage sync)
-├── icons/              # Extension icons (16px, 48px, 128px)
+├── icons/              # Minimalist SVG & PNG extension icons (16px, 48px, 128px)
 ├── LICENSE             # GNU Affero General Public License v3.0 (AGPL-3.0)
-└── README.md           # Documentation annotated with author profile
+└── README.md           # Project Documentation
 ```
 
 ---
