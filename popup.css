@@ -118,7 +118,68 @@
   }
 
   /* --------------------------------------------------------------------------
-     3. Custom Styled Select Dropdown (Editorial Theme)
+     3. Personalized Feedback Banner
+     -------------------------------------------------------------------------- */
+  .feedback-banner {
+    padding: 14px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: 1px solid var(--punch-red);
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-input));
+    box-shadow: 0 6px 18px rgba(230, 57, 70, 0.25);
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .feedback-banner-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .feedback-banner-title {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-main);
+  }
+
+  .feedback-banner-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .feedback-banner-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .feedback-banner-actions button {
+    flex: 1;
+  }
+
+  .feedback-banner-footer {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .link-never-again {
+    background: transparent;
+    border: none;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .link-never-again:hover {
+    color: var(--punch-red);
+  }
+
+  /* --------------------------------------------------------------------------
+     4. Custom Styled Select Dropdown (Editorial Theme)
      -------------------------------------------------------------------------- */
   select.editorial-select {
     appearance: none;
@@ -158,7 +219,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     4. Interactive Star Rating Component
+     5. Interactive Star Rating Component
      -------------------------------------------------------------------------- */
   .star-rating {
     display: flex;
@@ -196,7 +257,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     5. Header Bar
+     6. Header Bar
      -------------------------------------------------------------------------- */
   .editorial-header {
     display: flex;
@@ -345,7 +406,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     6. Toast Notifications
+     7. Toast Notifications
      -------------------------------------------------------------------------- */
   .editorial-toast {
     position: absolute;
@@ -370,7 +431,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     7. Main Panels & Views
+     8. Main Panels & Views
      -------------------------------------------------------------------------- */
   .view-panel {
     flex: 1;
@@ -388,7 +449,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     8. Login Card & Form Components
+     9. Login Card & Form Components
      -------------------------------------------------------------------------- */
   .editorial-card {
     background: var(--bg-card);
@@ -566,7 +627,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     9. Editorial Navigation Tabs
+     10. Editorial Navigation Tabs
      -------------------------------------------------------------------------- */
   .editorial-nav-tabs {
     display: flex;
@@ -609,7 +670,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     10. Dashboard Tab Panes
+     11. Dashboard Tab Panes
      -------------------------------------------------------------------------- */
   .tab-pane {
     display: none;
@@ -856,7 +917,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     11. Student Profile Box
+     12. Student Profile Box
      -------------------------------------------------------------------------- */
   .profile-box {
     display: flex;
@@ -993,7 +1054,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     12. Footer Branding
+     13. Footer Branding
      -------------------------------------------------------------------------- */
   .editorial-footer {
     padding: 10px;

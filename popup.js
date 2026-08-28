@@ -1,6 +1,6 @@
 /**
  * UET CS LMS Companion — Anti-Slop Editorial Edition (Beta v0.1.0) Controller
- * Optimizations: SWR Caching, Debounced Filtering, Offline Fallback, Onboarding Flow
+ * Optimizations: SWR Caching, Debounced Filtering, Personalized Feedback Banner
  * Author: Abdul Hannan Bhatti (https://github.com/hanan-bhatti)
  * License: AGPL-3.0
  */
@@ -231,15 +231,38 @@ function initListeners() {
     });
   }
 
-  // Feedback Trigger
+  // Feedback Triggers
   const feedbackBtn = document.getElementById("btn-open-feedback");
   if (feedbackBtn) {
-    feedbackBtn.addEventListener("click", () => {
-      if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
-        chrome.tabs.create({ url: "feedback.html" });
-      } else {
-        window.open("feedback.html", "_blank");
-      }
+    feedbackBtn.addEventListener("click", openFeedbackPage);
+  }
+
+  // Personalized Feedback Banner Listeners
+  const btnGiveFeedback = document.getElementById("btn-prompt-give-feedback");
+  if (btnGiveFeedback) {
+    btnGiveFeedback.addEventListener("click", async () => {
+      await Storage.set("opt_never_feedback", true);
+      document.getElementById("banner-feedback-prompt").classList.add("hidden");
+      openFeedbackPage();
+    });
+  }
+
+  const btnRemindLater = document.getElementById("btn-prompt-remind-later");
+  if (btnRemindLater) {
+    btnRemindLater.addEventListener("click", async () => {
+      const threeDaysLater = Date.now() + 3 * 24 * 60 * 60 * 1000;
+      await Storage.set("opt_remind_feedback_timestamp", threeDaysLater);
+      document.getElementById("banner-feedback-prompt").classList.add("hidden");
+      showToast("Remind set for 3 days later");
+    });
+  }
+
+  const btnNeverAgain = document.getElementById("btn-prompt-never-again");
+  if (btnNeverAgain) {
+    btnNeverAgain.addEventListener("click", async () => {
+      await Storage.set("opt_never_feedback", true);
+      document.getElementById("banner-feedback-prompt").classList.add("hidden");
+      showToast("Feedback prompt suppressed");
     });
   }
 
@@ -255,12 +278,41 @@ function initListeners() {
   }
 }
 
+function openFeedbackPage() {
+  if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+    chrome.tabs.create({ url: "feedback.html" });
+  } else {
+    window.open("feedback.html", "_blank");
+  }
+}
+
 function openGitHubIssues() {
   if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
     chrome.tabs.create({ url: GITHUB_ISSUES_URL });
   } else {
     window.open(GITHUB_ISSUES_URL, "_blank");
   }
+}
+
+// Check and Render Feedback Banner
+async function checkFeedbackBanner() {
+  const neverAsk = await Storage.get("opt_never_feedback");
+  const remindTime = await Storage.get("opt_remind_feedback_timestamp");
+  const banner = document.getElementById("banner-feedback-prompt");
+
+  if (!banner) return;
+
+  if (neverAsk) {
+    banner.classList.add("hidden");
+    return;
+  }
+
+  if (remindTime && Date.now() < remindTime) {
+    banner.classList.add("hidden");
+    return;
+  }
+
+  banner.classList.remove("hidden");
 }
 
 // --------------------------------------------------------------------------
@@ -319,6 +371,7 @@ function showDashboard() {
   document.getElementById("view-dashboard").classList.remove("hidden");
   document.getElementById("btn-refresh").classList.remove("hidden");
 
+  checkFeedbackBanner();
   loadDashboardData();
 }
 
