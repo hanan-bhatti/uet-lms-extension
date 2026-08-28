@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UET LMS Companion (Beta v0.1.0)</title>
+  <!-- Google Fonts: Playfair Display (Serif) & Outfit (UI Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="editorial-wrapper">
+    <!-- Header Bar -->
+    <header class="editorial-header">
+      <div class="brand-container">
+        <div class="editorial-monogram">
+          <span>UET</span>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title-row">
+            <h1 class="editorial-brand-title">LMS Journal</h1>
+            <span class="badge-beta">BETA v0.1.0</span>
+          </div>
+          <div class="badge-row">
+            <span id="badge-semester" class="editorial-badge">VOL. 2026 • FALL</span>
+            <span id="badge-offline" class="editorial-badge-amber hidden">OFFLINE</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Report Issue Button -->
+        <button id="btn-report-issue" class="editorial-icon-btn" title="Report Issue on GitHub" aria-label="Report Issue">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </button>
+        <!-- Theme Toggle Button -->
+        <button id="btn-theme-toggle" class="editorial-icon-btn" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <svg id="icon-sun" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg id="icon-moon" class="svg-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <!-- Refresh Button -->
+        <button id="btn-refresh" class="editorial-icon-btn hidden" title="Refresh Data" aria-label="Refresh Data">
+          <svg class="svg-icon spin-on-hover" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast-banner" class="editorial-toast hidden">
+      <span id="toast-message">Notification</span>
+    </div>
+
+    <!-- VIEW 1: AUTHENTICATION / LOGIN -->
+    <main id="view-login" class="view-panel">
+      <div class="editorial-card login-card">
+        <div class="login-header">
+          <span class="editorial-kicker">EARLY ACCESS • BETA V0.1.0</span>
+          <h2 class="editorial-heading">Sign In to Journal</h2>
+          <p class="login-sub">Access your academic records and daily timetable</p>
+        </div>
+
+        <hr class="editorial-rule">
+
+        <form id="form-login" class="editorial-form">
+          <div class="input-group">
+            <label for="input-email">STUDENT EMAIL ADDRESS</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <input type="email" id="input-email" placeholder="student@student.uet.edu.pk" required autocomplete="username">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="input-password">PORTAL PASSWORD</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" id="input-password" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+          </div>
+
+          <div id="login-error" class="editorial-alert-danger hidden">
+            <span>Invalid email or password</span>
+          </div>
+
+          <button type="submit" id="btn-submit-login" class="editorial-btn-primary">
+            <span>Authenticate Session</span>
+            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </form>
+
+        <div class="login-footer">
+          <p>UET COMPUTER SCIENCE • OFFICIAL DIRECTORY</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- VIEW 2: MAIN DASHBOARD -->
+    <main id="view-dashboard" class="view-panel hidden">
+      <!-- Nav Tabs -->
+      <nav class="editorial-nav-tabs">
+        <button class="editorial-tab active" data-target="tab-schedule">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Schedule</span>
+        </button>
+        <button class="editorial-tab" data-target="tab-courses">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Catalog</span>
+        </button>
+        <button class="editorial-tab" data-target="tab-notices">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Notices</span>
+        </button>
+        <button class="editorial-tab" data-target="tab-profile">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: SCHEDULE -->
+      <section id="tab-schedule" class="tab-pane active">
+        <div class="pane-header">
+          <h3 class="editorial-title">TIMETABLE DIRECTORY</h3>
+          <span id="schedule-date-label" class="editorial-chip">TODAY</span>
+        </div>
+
+        <!-- Full 7-Day Week Selector Bar -->
+        <div class="editorial-day-bar">
+          <button class="day-chip active" data-day="today">Today</button>
+          <button class="day-chip" data-day="all">All Week</button>
+          <button class="day-chip" data-day="monday">Mon</button>
+          <button class="day-chip" data-day="tuesday">Tue</button>
+          <button class="day-chip" data-day="wednesday">Wed</button>
+          <button class="day-chip" data-day="thursday">Thu</button>
+          <button class="day-chip" data-day="friday">Fri</button>
+          <button class="day-chip" data-day="saturday">Sat</button>
+          <button class="day-chip" data-day="sunday">Sun</button>
+        </div>
+
+        <div id="container-schedule" class="editorial-list">
+          <div class="editorial-skeleton"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: CATALOG -->
+      <section id="tab-courses" class="tab-pane">
+        <div class="pane-header">
+          <h3 class="editorial-title">COURSE CATALOG</h3>
+          <span id="course-count-chip" class="editorial-chip">51 COURSES</span>
+        </div>
+
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-course" placeholder="Filter courses by code or title (e.g. ADMS, CSC207)...">
+        </div>
+
+        <div id="container-courses" class="editorial-list">
+          <div class="editorial-skeleton"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: NOTICES -->
+      <section id="tab-notices" class="tab-pane">
+        <div class="pane-header">
+          <h3 class="editorial-title">GAZETTE & NOTICES</h3>
+          <span class="editorial-chip">LIVE BULLETIN</span>
+        </div>
+
+        <div id="container-notices" class="editorial-list">
+          <div class="editorial-skeleton"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: PROFILE -->
+      <section id="tab-profile" class="tab-pane">
+        <div class="editorial-card profile-box">
+          <div class="profile-avatar-wrap">
+            <div id="user-avatar-initial" class="editorial-monogram-lg">ST</div>
+          </div>
+          
+          <h3 id="user-full-name" class="user-name">Student Name</h3>
+          <p id="user-reg-no" class="user-reg">N/A</p>
+          <p id="user-email-text" class="user-email">student@student.uet.edu.pk</p>
+
+          <hr class="editorial-rule">
+
+          <div class="profile-stats-grid">
+            <div class="stat-editorial-box">
+              <span class="stat-num" id="stat-role">Student</span>
+              <span class="stat-label">Role</span>
+            </div>
+            <div class="stat-editorial-box">
+              <span class="stat-num" id="stat-dept">CS</span>
+              <span class="stat-label">Department</span>
+            </div>
+            <div class="stat-editorial-box">
+              <span class="stat-num" id="stat-term">Fall 2026</span>
+              <span class="stat-label">Semester</span>
+            </div>
+          </div>
+
+          <div class="profile-meta-list">
+            <div class="meta-row">
+              <span>Account Status</span>
+              <span class="editorial-pill-active">Active Candidate</span>
+            </div>
+            <div class="meta-row">
+              <span>Institution</span>
+              <span>UET Computer Science</span>
+            </div>
+          </div>
+
+          <button id="btn-open-issues-tab" class="editorial-btn-secondary" style="margin-top: 4px;">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            <span>Report Issue on GitHub</span>
+          </button>
+
+          <button id="btn-logout" class="editorial-btn-danger">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Terminate Session</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer Branding -->
+    <footer class="editorial-footer">
+      <span>Curated by <a href="https://github.com/hanan-bhatti" target="_blank" class="footer-link">Abdul Hannan Bhatti</a> • UET CS</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
